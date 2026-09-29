@@ -1,0 +1,64 @@
+{
+  "model_name": "K'STARKOM Conveyor Predictive Maintenance",
+  "model_type": "XGBoost",
+  "training_date": "2026-09-10T23:19:46.540537",
+  "dataset_info": {
+    "total_samples_used": 1209,
+    "training_samples": 967,
+    "test_samples": 242
+  },
+  "features": {
+    "total_features": 20,
+    "original_features": 5,
+    "engineered_features": 15
+  },
+  "target": {
+    "column": "Fault",
+    "classes": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+    ]
+  },
+  "performance_metrics": {
+    "accuracy": 0.9876524309523645,
+    "precision": 0.9839654063600849,
+    "recall": 0.9834710743801653,
+    "f1_score": 0.9876524309523645
+  },
+  "model_selection": {
+    "criteria": "F1-Score (Weighted)",
+    "candidates": [
+      "Logistic Regression",
+      "Random Forest",
+      "XGBoost"
+    ],
+    "winner": "XGBoost",
+    "winner_score": 0.9876524309523645
+  },
+  "preprocessing": {
+    "scaler": "StandardScaler",
+    "handling_missing_values": "Median imputation for numeric, mode for categorical",
+    "outlier_removal": "IQR method with threshold=3",
+    "categorical_encoding": "LabelEncoder",
+    "feature_engineering": [
+      "Rolling mean (window=5)",
+      "Rolling std (window=5)",
+      "Rate of change"
+    ]
+  },
+  "deployment_info": {
+    "framework": "scikit-learn, XGBoost",
+    "python_version": "3.7+",
+    "required_packages": [
+      "scikit-learn",
+      "xgboost",
+      "numpy",
+      "pandas",
+      "joblib"
+    ]
+  }
+}

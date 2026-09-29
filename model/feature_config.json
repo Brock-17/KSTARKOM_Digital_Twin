@@ -1,0 +1,41 @@
+{
+  "features": [
+    "Speed (rpm)",
+    "Load (kg)",
+    "Temperature (\u2103)",
+    "Vibration (m/s\u00b2)",
+    "Current (A)",
+    "Speed (rpm)_rolling_mean",
+    "Speed (rpm)_rolling_std",
+    "Speed (rpm)_rate_of_change",
+    "Load (kg)_rolling_mean",
+    "Load (kg)_rolling_std",
+    "Load (kg)_rate_of_change",
+    "Temperature (\u2103)_rolling_mean",
+    "Temperature (\u2103)_rolling_std",
+    "Temperature (\u2103)_rate_of_change",
+    "Vibration (m/s\u00b2)_rolling_mean",
+    "Vibration (m/s\u00b2)_rolling_std",
+    "Vibration (m/s\u00b2)_rate_of_change",
+    "Current (A)_rolling_mean",
+    "Current (A)_rolling_std",
+    "Current (A)_rate_of_change"
+  ],
+  "n_features": 20,
+  "feature_mapping": {
+    "vibration": "Vibration (m/s\u00b2)",
+    "temperature": "Temperature (\u2103)",
+    "current": "Current (A)",
+    "load": "Load (kg)",
+    "speed": "Speed (rpm)",
+    "fault": "Fault"
+  },
+  "original_columns": [
+    "Fault",
+    "Speed (rpm)",
+    "Load (kg)",
+    "Temperature (\u2103)",
+    "Vibration (m/s\u00b2)",
+    "Current (A)"
+  ]
+}

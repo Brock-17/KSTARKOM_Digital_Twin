@@ -1,0 +1,21 @@
+{
+  "sensor_values": {
+    "Speed (rpm)": 121.0,
+    "Load (kg)": 506.0,
+    "Temperature (\u2103)": 41.0,
+    "Vibration (m/s\u00b2)": 0.83,
+    "Current (A)": 3.4,
+    "Speed (rpm)_rolling_mean": 120.6,
+    "Speed (rpm)_rolling_std": 3.082207001484506,
+    "Speed (rpm)_rate_of_change": 0.0,
+    "Load (kg)_rolling_mean": 507.8,
+    "Load (kg)_rolling_std": 7.155417527998423,
+    "Load (kg)_rate_of_change": 0.0,
+    "Temperature (\u2103)_rolling_mean": 41.2,
+    "Temperature (\u2103)_rolling_std": 1.6733200530681265,
+    "Temperature (\u2103)_rate_of_change": 0.0,
+    "Vibration (m/s\u00b2)_rolling_mean": 0.836
+  },
+  "description": "Example input for predictive maintenance model",
+  "note": "Include all features listed in feature_config.json"
+}

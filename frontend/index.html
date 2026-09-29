@@ -1,0 +1,941 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>K'STARKOM DT-9000 // Industrial SCADA Digital Twin</title>
+  <meta name="description" content="K'STARKOM Intelligent Conveyor Monitoring — High-End Industrial SCADA Digital Twin & Predictive Maintenance System for Iron Ore Mining">
+  <link rel="stylesheet" href="/static/style.css">
+  <!-- Chart.js for high-speed streaming telemetry -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+</head>
+<body>
+
+  <!-- ==================== 1. MISSION CONTROL TOPBAR ==================== -->
+  <header class="scada-topbar">
+    <div class="scada-brand">
+      <div class="brand-emblem" title="K'STARKOM SCADA Core">
+        <svg viewBox="0 0 24 24">
+          <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+        </svg>
+      </div>
+      <div class="brand-titles">
+        <h1>
+          K'STARKOM DT-9000
+          <span class="tag-version">SCADA v2.4</span>
+          <span class="tag-version" style="border-color:var(--amber-warn); color:var(--amber-warn)">SIH-2026</span>
+        </h1>
+        <p class="brand-sub">
+          HEAVY ORE CONVEYOR DIGITAL TWIN <span>//</span> LINE BAY-4 <span>[TAG: CV-ORE-001]</span>
+        </p>
+      </div>
+    </div>
+
+    <div class="scada-telemetry-status">
+      <div class="status-badge" id="system-status-badge">
+        <span class="status-dot online" id="system-dot"></span>
+        <span id="system-status-text">TELEMETRY LINK: ONLINE</span>
+      </div>
+
+      <div class="status-badge" id="model-status-badge" style="cursor:pointer;" onclick="openModal('modal-model')">
+        <span style="color:var(--cyan-neon);">AI ENGINE:</span>
+        <span id="model-pill-text">XGBOOST CLASSIFIER</span>
+      </div>
+
+      <div class="scada-clock" id="scada-clock">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
+        </svg>
+        <span id="clock-utc">00:00:00 UTC</span>
+      </div>
+
+      <div class="scada-actions">
+        <button class="icon-btn" id="btn-audio-alarm" title="Toggle SCADA Audio Alarms">
+          <svg id="icon-audio-on" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+            <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/>
+          </svg>
+        </button>
+        <button class="icon-btn" id="btn-fullscreen" title="Toggle Fullscreen Mode">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ==================== 2. PRIMARY OPERATIONS TOOLBAR ==================== -->
+  <nav class="scada-toolbar">
+    <div class="toolbar-left">
+      <span class="toolbar-label">SIMULATION REGIME:</span>
+      <div class="mode-switch-group">
+        <button class="mode-btn active" data-mode="NORMAL" id="mode-btn-normal">
+          <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--emerald-safe);"></span>
+          NORMAL RUN
+        </button>
+        <button class="mode-btn" data-mode="WARNING" id="mode-btn-warning">
+          <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--amber-warn);"></span>
+          WARNING DRIFT
+        </button>
+        <button class="mode-btn" data-mode="FAULT" id="mode-btn-fault">
+          <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--crimson-crit);"></span>
+          CRITICAL FAULT
+        </button>
+      </div>
+
+      <div class="rate-badge">
+        <span class="rate-pulse"></span>
+        <span>STREAM: 1.5s POLLING</span>
+      </div>
+    </div>
+
+    <div class="toolbar-right">
+      <button class="scada-btn primary" onclick="openModal('modal-whatif')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
+        </svg>
+        WHAT-IF ML LAB
+      </button>
+
+      <button class="scada-btn" onclick="openModal('modal-vision')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+          <circle cx="12" cy="13" r="4"/>
+        </svg>
+        AI VISION INSPECTOR
+      </button>
+
+      <button class="scada-btn" onclick="openModal('modal-model')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
+        </svg>
+        MODEL DOSSIER
+      </button>
+    </div>
+  </nav>
+
+  <!-- ==================== MAIN DASHBOARD CONTAINER ==================== -->
+  <main class="scada-container">
+
+    <!-- ==================== 3. MASTER KPI COMMAND STRIP ==================== -->
+    <section class="kpi-matrix">
+      <!-- KPI 1: Conveyor Overall Health -->
+      <div class="kpi-card" id="card-kpi-health">
+        <div class="kpi-info">
+          <span class="kpi-tag">SYSTEM INTEGRITY INDEX</span>
+          <div class="kpi-number">
+            <span id="val-health">--</span><span class="kpi-unit">%</span>
+          </div>
+          <span class="kpi-status-tag nominal" id="tag-health">OPTIMAL STATUS</span>
+        </div>
+        <div class="radial-progress-wrap">
+          <svg class="radial-svg" viewBox="0 0 80 80">
+            <circle class="radial-bg" cx="40" cy="40" r="34"/>
+            <circle class="radial-bar" id="radial-health" cx="40" cy="40" r="34"/>
+          </svg>
+          <div class="radial-center-val" id="radial-health-val">--%</div>
+        </div>
+      </div>
+
+      <!-- KPI 2: Failure Rupture Risk -->
+      <div class="kpi-card" id="card-kpi-risk">
+        <div class="kpi-info">
+          <span class="kpi-tag">RUPTURE / FAILURE RISK</span>
+          <div class="kpi-number">
+            <span id="val-risk">--</span><span class="kpi-unit" id="unit-risk-pct">--%</span>
+          </div>
+          <span class="kpi-status-tag nominal" id="tag-risk">RISK: LOW</span>
+        </div>
+        <div class="radial-progress-wrap">
+          <svg class="radial-svg" viewBox="0 0 80 80">
+            <circle class="radial-bg" cx="40" cy="40" r="34"/>
+            <circle class="radial-bar" id="radial-risk" cx="40" cy="40" r="34" style="stroke:var(--amber-warn);"/>
+          </svg>
+          <div class="radial-center-val" id="radial-risk-val">--%</div>
+        </div>
+      </div>
+
+      <!-- KPI 3: Predicted Fault Annunciator -->
+      <div class="kpi-card" id="card-kpi-fault">
+        <div class="kpi-info" style="max-width: 75%;">
+          <span class="kpi-tag">ANOMALY CLASSIFICATION</span>
+          <div class="kpi-number" style="font-size: 20px; line-height: 1.2;" id="val-fault">
+            INITIALIZING...
+          </div>
+          <span class="kpi-status-tag nominal" id="tag-fault-class">CLASS --</span>
+        </div>
+        <div style="font-size: 34px; color: var(--cyan-neon); opacity: 0.8;" id="icon-fault-type">
+          ⚙️
+        </div>
+      </div>
+
+      <!-- KPI 4: Model Softmax Confidence -->
+      <div class="kpi-card" id="card-kpi-conf">
+        <div class="kpi-info">
+          <span class="kpi-tag">MODEL CONFIDENCE</span>
+          <div class="kpi-number">
+            <span id="val-confidence">--</span><span class="kpi-unit">%</span>
+          </div>
+          <span class="kpi-status-tag nominal" id="tag-conf">XGBOOST SOFTMAX</span>
+        </div>
+        <div class="radial-progress-wrap">
+          <svg class="radial-svg" viewBox="0 0 80 80">
+            <circle class="radial-bg" cx="40" cy="40" r="34"/>
+            <circle class="radial-bar" id="radial-conf" cx="40" cy="40" r="34"/>
+          </svg>
+          <div class="radial-center-val" id="radial-conf-val">--%</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== 4. 5-CHANNEL SENSOR TELEMETRY STRIP ==================== -->
+    <section class="sensor-strip">
+      <!-- Sensor 1: Belt Speed -->
+      <div class="sensor-gauge-pod" id="pod-speed">
+        <div class="sensor-pod-head">
+          <span class="sensor-pod-tag">DRIVE SPEED</span>
+          <span class="sensor-pod-id">SE-101</span>
+        </div>
+        <div class="sensor-pod-value-row">
+          <div><span class="sensor-pod-val" id="val-s-speed">--</span><span class="sensor-pod-unit">RPM</span></div>
+          <span class="sensor-delta-pill" id="delta-speed">NOMINAL</span>
+        </div>
+        <div class="gauge-linear-track">
+          <div class="gauge-linear-fill" id="gauge-bar-speed"></div>
+        </div>
+        <div class="sensor-envelope-limits">
+          <span>0 RPM</span>
+          <span style="color:var(--cyan-neon);">TARGET: 120</span>
+          <span>160 RPM</span>
+        </div>
+        <div class="sensor-sparkline-wrap"><canvas id="sparkline-speed"></canvas></div>
+      </div>
+
+      <!-- Sensor 2: Conveyor Load -->
+      <div class="sensor-gauge-pod" id="pod-load">
+        <div class="sensor-pod-head">
+          <span class="sensor-pod-tag">ORE PAYLOAD</span>
+          <span class="sensor-pod-id">WE-102</span>
+        </div>
+        <div class="sensor-pod-value-row">
+          <div><span class="sensor-pod-val" id="val-s-load">--</span><span class="sensor-pod-unit">KG</span></div>
+          <span class="sensor-delta-pill" id="delta-load">NOMINAL</span>
+        </div>
+        <div class="gauge-linear-track">
+          <div class="gauge-linear-fill" id="gauge-bar-load"></div>
+        </div>
+        <div class="sensor-envelope-limits">
+          <span>350 KG</span>
+          <span style="color:var(--cyan-neon);">RATED: 507</span>
+          <span>750 KG</span>
+        </div>
+        <div class="sensor-sparkline-wrap"><canvas id="sparkline-load"></canvas></div>
+      </div>
+
+      <!-- Sensor 3: Bearing/Motor Temp -->
+      <div class="sensor-gauge-pod" id="pod-temp">
+        <div class="sensor-pod-head">
+          <span class="sensor-pod-tag">THERMAL LOAD</span>
+          <span class="sensor-pod-id">TE-103</span>
+        </div>
+        <div class="sensor-pod-value-row">
+          <div><span class="sensor-pod-val" id="val-s-temp">--</span><span class="sensor-pod-unit">°C</span></div>
+          <span class="sensor-delta-pill" id="delta-temp">NOMINAL</span>
+        </div>
+        <div class="gauge-linear-track">
+          <div class="gauge-linear-fill" id="gauge-bar-temp" style="background:var(--amber-warn);"></div>
+        </div>
+        <div class="sensor-envelope-limits">
+          <span>20 °C</span>
+          <span style="color:var(--amber-warn);">WARN &gt; 50°C</span>
+          <span>80 °C</span>
+        </div>
+        <div class="sensor-sparkline-wrap"><canvas id="sparkline-temp"></canvas></div>
+      </div>
+
+      <!-- Sensor 4: Vibration -->
+      <div class="sensor-gauge-pod" id="pod-vib">
+        <div class="sensor-pod-head">
+          <span class="sensor-pod-tag">VIBRATION TRIAX</span>
+          <span class="sensor-pod-id">VE-104</span>
+        </div>
+        <div class="sensor-pod-value-row">
+          <div><span class="sensor-pod-val" id="val-s-vib">--</span><span class="sensor-pod-unit">m/s²</span></div>
+          <span class="sensor-delta-pill" id="delta-vib">NOMINAL</span>
+        </div>
+        <div class="gauge-linear-track">
+          <div class="gauge-linear-fill" id="gauge-bar-vib" style="background:var(--crimson-crit);"></div>
+        </div>
+        <div class="sensor-envelope-limits">
+          <span>0.2</span>
+          <span style="color:var(--crimson-crit);">TRIP &gt; 3.0</span>
+          <span>5.0 m/s²</span>
+        </div>
+        <div class="sensor-sparkline-wrap"><canvas id="sparkline-vib"></canvas></div>
+      </div>
+
+      <!-- Sensor 5: Motor Current -->
+      <div class="sensor-gauge-pod" id="pod-current">
+        <div class="sensor-pod-head">
+          <span class="sensor-pod-tag">CURRENT DRAW</span>
+          <span class="sensor-pod-id">IE-105</span>
+        </div>
+        <div class="sensor-pod-value-row">
+          <div><span class="sensor-pod-val" id="val-s-current">--</span><span class="sensor-pod-unit">A</span></div>
+          <span class="sensor-delta-pill" id="delta-current">NOMINAL</span>
+        </div>
+        <div class="gauge-linear-track">
+          <div class="gauge-linear-fill" id="gauge-bar-current" style="background:var(--gold-power);"></div>
+        </div>
+        <div class="sensor-envelope-limits">
+          <span>1.0 A</span>
+          <span style="color:var(--gold-power);">TRIP &gt; 12A</span>
+          <span>16.0 A</span>
+        </div>
+        <div class="sensor-sparkline-wrap"><canvas id="sparkline-current"></canvas></div>
+      </div>
+    </section>
+
+    <!-- ==================== 5. HIGH-DEFINITION SCADA DIGITAL TWIN SCHEMATIC ==================== -->
+    <section class="twin-section">
+      <!-- Vector Schematic Viewport -->
+      <div class="twin-viewport-card">
+        <div class="twin-canvas-toolbar">
+          <div class="panel-title">
+            <span class="panel-title-icon">⬢</span>
+            <h2>CONVEYOR 2D DIGITAL TWIN SCHEMATIC // PHYSICAL ASSET MONITOR</h2>
+          </div>
+          <div style="display:flex; align-items:center; gap:10px;">
+            <span class="panel-meta" id="twin-conveyor-tag">TAG: CONV-001 [RUNNING]</span>
+            <button class="scada-btn" style="padding:4px 10px; font-size:11px;" onclick="resetSelectedJoint()">DESELECT</button>
+          </div>
+        </div>
+
+        <div class="twin-canvas-wrap">
+          <svg id="twin-schematic-svg" viewBox="0 0 1000 360" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <!-- Metallic Linear Gradients -->
+              <linearGradient id="grad-steel-frame" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#2a3b50"/>
+                <stop offset="100%" stop-color="#141c26"/>
+              </linearGradient>
+              <linearGradient id="grad-motor-body" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#00f0ff" stop-opacity="0.9"/>
+                <stop offset="100%" stop-color="#005f73" stop-opacity="0.9"/>
+              </linearGradient>
+              <linearGradient id="grad-belt" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stop-color="#1b2430"/>
+                <stop offset="50%" stop-color="#2c3a4d"/>
+                <stop offset="100%" stop-color="#1b2430"/>
+              </linearGradient>
+              <!-- Glow Filters -->
+              <filter id="glow-cyan" x="-20%" y="-20%" width="140%" height="140%">
+                <feGaussianBlur stdDeviation="4" result="blur"/>
+                <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+              </filter>
+              <filter id="glow-alarm" x="-30%" y="-30%" width="160%" height="160%">
+                <feGaussianBlur stdDeviation="6" result="blur"/>
+                <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+              </filter>
+            </defs>
+
+            <!-- Steel Structural Gantry Trusses -->
+            <g id="gantry-truss" stroke="#1c2838" stroke-width="2" fill="none">
+              <!-- Horizontal main rails -->
+              <line x1="80" y1="210" x2="920" y2="210" stroke="#253549" stroke-width="4"/>
+              <line x1="80" y1="260" x2="920" y2="260" stroke="#1c2838" stroke-width="3"/>
+              <!-- Crossbeam trusses -->
+              <line x1="120" y1="210" x2="160" y2="260"/>
+              <line x1="160" y1="260" x2="200" y2="210"/>
+              <line x1="200" y1="210" x2="240" y2="260"/>
+              <line x1="240" y1="260" x2="280" y2="210"/>
+              <line x1="280" y1="210" x2="320" y2="260"/>
+              <line x1="320" y1="260" x2="360" y2="210"/>
+              <line x1="360" y1="210" x2="400" y2="260"/>
+              <line x1="400" y1="260" x2="440" y2="210"/>
+              <line x1="440" y1="210" x2="480" y2="260"/>
+              <line x1="480" y1="260" x2="520" y2="210"/>
+              <line x1="520" y1="210" x2="560" y2="260"/>
+              <line x1="560" y1="260" x2="600" y2="210"/>
+              <line x1="600" y1="210" x2="640" y2="260"/>
+              <line x1="640" y1="260" x2="680" y2="210"/>
+              <line x1="680" y1="210" x2="720" y2="260"/>
+              <line x1="720" y1="260" x2="760" y2="210"/>
+              <line x1="760" y1="210" x2="800" y2="260"/>
+              <line x1="800" y1="260" x2="840" y2="210"/>
+              <line x1="840" y1="210" x2="880" y2="260"/>
+              <!-- Ground Pylons -->
+              <line x1="140" y1="260" x2="140" y2="330" stroke="#2a3b50" stroke-width="6"/>
+              <line x1="480" y1="260" x2="480" y2="330" stroke="#2a3b50" stroke-width="6"/>
+              <line x1="820" y1="260" x2="820" y2="330" stroke="#2a3b50" stroke-width="6"/>
+              <!-- Ground baseline -->
+              <line x1="60" y1="330" x2="940" y2="330" stroke="#182330" stroke-width="2" stroke-dasharray="4 4"/>
+            </g>
+
+            <!-- Troughing & Return Idlers Spaced Across the Gantry -->
+            <g id="idlers-group">
+              <!-- Dynamic idler hubs rendered via JS -->
+            </g>
+
+            <!-- Continuous Conveyor Belt Loop -->
+            <g id="conveyor-belt-loop">
+              <!-- Return Deck (Lower Belt) -->
+              <path id="belt-return" d="M 870 196 L 130 196" stroke="#1b2532" stroke-width="8" stroke-linecap="round"/>
+              <path class="belt-path-active" d="M 870 196 L 130 196" stroke="#00f0ff" stroke-width="2" stroke-opacity="0.3"/>
+
+              <!-- Carry Deck (Upper Belt with Ore Payload) -->
+              <path id="belt-carry" d="M 130 140 L 870 140" stroke="url(#grad-belt)" stroke-width="12" stroke-linecap="round"/>
+              <path class="belt-path-active" d="M 130 140 L 870 140" stroke="#00f0ff" stroke-width="3" stroke-opacity="0.6"/>
+
+              <!-- Ore Payload Clusters on Upper Belt -->
+              <g id="ore-particles" fill="#6d543e" opacity="0.85"></g>
+            </g>
+
+            <!-- Tail Pulley Assembly (Left, x=130, y=168) -->
+            <g id="tail-pulley-assembly" class="component-anchor" data-comp="Tail Pulley" style="cursor:pointer;">
+              <!-- Outer Rim -->
+              <circle id="tail-drum-rim" cx="130" cy="168" r="28" fill="#131d2a" stroke="#00e676" stroke-width="4"/>
+              <!-- Rotating Spokes -->
+              <g id="tail-spokes" class="pulley-rotating-ccw">
+                <line x1="130" y1="144" x2="130" y2="192" stroke="#374d68" stroke-width="3"/>
+                <line x1="106" y1="168" x2="154" y2="168" stroke="#374d68" stroke-width="3"/>
+                <line x1="113" y1="151" x2="147" y2="185" stroke="#374d68" stroke-width="2"/>
+                <line x1="113" y1="185" x2="147" y2="151" stroke="#374d68" stroke-width="2"/>
+              </g>
+              <circle cx="130" cy="168" r="8" fill="#00e676"/>
+              <text x="130" y="215" text-anchor="middle" fill="#64748b" font-size="10" font-family="JetBrains Mono">TAIL DRUM</text>
+              <!-- Screw Take-up Tensioner -->
+              <rect x="75" y="163" width="30" height="10" rx="2" fill="#1b2532" stroke="#33475d" stroke-width="1.5"/>
+              <line x1="60" y1="168" x2="75" y2="168" stroke="#00f0ff" stroke-width="2"/>
+              <text x="75" y="156" text-anchor="middle" fill="#00f0ff" font-size="9" font-family="JetBrains Mono">TENSION</text>
+            </g>
+
+            <!-- Drive Head Pulley Assembly (Right, x=870, y=168) -->
+            <g id="drive-pulley-assembly" class="component-anchor" data-comp="Drive Pulley" style="cursor:pointer;">
+              <circle id="head-drum-rim" cx="870" cy="168" r="32" fill="#131d2a" stroke="#00e676" stroke-width="4"/>
+              <g id="head-spokes" class="pulley-rotating-cw">
+                <line x1="870" y1="140" x2="870" y2="196" stroke="#374d68" stroke-width="3"/>
+                <line x1="842" y1="168" x2="898" y2="168" stroke="#374d68" stroke-width="3"/>
+                <line x1="850" y1="148" x2="890" y2="188" stroke="#374d68" stroke-width="2"/>
+                <line x1="850" y1="188" x2="890" y2="148" stroke="#374d68" stroke-width="2"/>
+              </g>
+              <circle cx="870" cy="168" r="10" fill="#00e676"/>
+              <text x="870" y="218" text-anchor="middle" fill="#64748b" font-size="10" font-family="JetBrains Mono">HEAD DRUM</text>
+            </g>
+
+            <!-- Snub Pulley (Belt Wrap Enhancer, x=825, y=210) -->
+            <g id="snub-pulley">
+              <circle cx="825" cy="208" r="14" fill="#111a24" stroke="#2a3c52" stroke-width="2"/>
+              <circle cx="825" cy="208" r="4" fill="#00f0ff"/>
+            </g>
+
+            <!-- Heavy-Duty Electric Drive Motor & Gearbox (Far Right, x=925, y=130) -->
+            <g id="motor-assembly" class="component-anchor" data-comp="Motor" style="cursor:pointer;">
+              <!-- Motor Thermal Heat Glow Halo (Dynamic Opacity via JS) -->
+              <circle id="motor-thermal-glow" cx="945" cy="168" r="45" fill="none" stroke="#ff0055" stroke-width="12" opacity="0" filter="url(#glow-alarm)"/>
+              <!-- Motor Housing -->
+              <rect id="motor-body-box" x="918" y="132" width="54" height="68" rx="6" fill="#142131" stroke="#00e676" stroke-width="2"/>
+              <!-- Cooling Fins -->
+              <line x1="924" y1="142" x2="966" y2="142" stroke="#25384e" stroke-width="2"/>
+              <line x1="924" y1="150" x2="966" y2="150" stroke="#25384e" stroke-width="2"/>
+              <line x1="924" y1="158" x2="966" y2="158" stroke="#25384e" stroke-width="2"/>
+              <line x1="924" y1="166" x2="966" y2="166" stroke="#25384e" stroke-width="2"/>
+              <line x1="924" y1="174" x2="966" y2="174" stroke="#25384e" stroke-width="2"/>
+              <line x1="924" y1="182" x2="966" y2="182" stroke="#25384e" stroke-width="2"/>
+              <!-- Terminal Box -->
+              <rect x="932" y="122" width="26" height="10" rx="2" fill="#203348" stroke="#00f0ff" stroke-width="1.5"/>
+              <!-- Drive Coupling Shaft -->
+              <line x1="902" y1="168" x2="918" y2="168" stroke="#718ba7" stroke-width="8"/>
+              <text x="945" y="218" text-anchor="middle" fill="#00f0ff" font-size="10" font-family="Orbitron" font-weight="700">MOTOR</text>
+            </g>
+
+            <!-- Instrumented Sensor Pins & Beacon Overlays -->
+            <g id="sensor-pins-overlay">
+              <!-- TE-103: Temp on Motor -->
+              <g transform="translate(945, 95)" class="probe-tag">
+                <rect x="-24" y="-12" width="48" height="18" rx="3" fill="#0b1118" stroke="#ffb703" stroke-width="1.5"/>
+                <text x="0" y="1" text-anchor="middle" fill="#ffb703" font-size="9" font-family="JetBrains Mono" font-weight="700">TE-103</text>
+                <line x1="0" y1="7" x2="0" y2="26" stroke="#ffb703" stroke-width="1.5" stroke-dasharray="2 2"/>
+              </g>
+
+              <!-- VE-104: Vibration on Drive Bearing -->
+              <g transform="translate(870, 85)" class="probe-tag">
+                <rect x="-24" y="-12" width="48" height="18" rx="3" fill="#0b1118" stroke="#ff0055" stroke-width="1.5"/>
+                <text x="0" y="1" text-anchor="middle" fill="#ff0055" font-size="9" font-family="JetBrains Mono" font-weight="700">VE-104</text>
+                <line x1="0" y1="7" x2="0" y2="45" stroke="#ff0055" stroke-width="1.5" stroke-dasharray="2 2"/>
+              </g>
+
+              <!-- WE-102: Load Cell Weigher Frame -->
+              <g transform="translate(520, 85)" class="probe-tag">
+                <rect x="-24" y="-12" width="48" height="18" rx="3" fill="#0b1118" stroke="#00f0ff" stroke-width="1.5"/>
+                <text x="0" y="1" text-anchor="middle" fill="#00f0ff" font-size="9" font-family="JetBrains Mono" font-weight="700">WE-102</text>
+                <line x1="0" y1="7" x2="0" y2="45" stroke="#00f0ff" stroke-width="1.5" stroke-dasharray="2 2"/>
+              </g>
+
+              <!-- SE-101: Speed Optical Tachometer -->
+              <g transform="translate(130, 85)" class="probe-tag">
+                <rect x="-24" y="-12" width="48" height="18" rx="3" fill="#0b1118" stroke="#00e676" stroke-width="1.5"/>
+                <text x="0" y="1" text-anchor="middle" fill="#00e676" font-size="9" font-family="JetBrains Mono" font-weight="700">SE-101</text>
+                <line x1="0" y1="7" x2="0" y2="45" stroke="#00e676" stroke-width="1.5" stroke-dasharray="2 2"/>
+              </g>
+            </g>
+
+            <!-- Belt Splice Joints J1-J5 Graphic Anchors (Generated & Positioned Dynamically) -->
+            <g id="joints-svg-layer"></g>
+
+            <!-- Physical Meter Distance Scale Bar -->
+            <g id="meter-scale-bar" transform="translate(130, 310)">
+              <line x1="0" y1="0" x2="740" y2="0" stroke="#33475f" stroke-width="2"/>
+              <line x1="0" y1="-6" x2="0" y2="6" stroke="#33475f" stroke-width="2"/>
+              <line x1="185" y1="-4" x2="185" y2="4" stroke="#33475f" stroke-width="1"/>
+              <line x1="370" y1="-6" x2="370" y2="6" stroke="#33475f" stroke-width="2"/>
+              <line x1="555" y1="-4" x2="555" y2="4" stroke="#33475f" stroke-width="1"/>
+              <line x1="740" y1="-6" x2="740" y2="6" stroke="#33475f" stroke-width="2"/>
+              <text x="0" y="18" text-anchor="middle" fill="#64748b" font-size="9" font-family="JetBrains Mono">0m</text>
+              <text x="185" y="18" text-anchor="middle" fill="#64748b" font-size="9" font-family="JetBrains Mono">20m</text>
+              <text x="370" y="18" text-anchor="middle" fill="#64748b" font-size="9" font-family="JetBrains Mono">40m</text>
+              <text x="555" y="18" text-anchor="middle" fill="#64748b" font-size="9" font-family="JetBrains Mono">60m</text>
+              <text x="740" y="18" text-anchor="middle" fill="#64748b" font-size="9" font-family="JetBrains Mono">80m</text>
+            </g>
+          </svg>
+        </div>
+
+        <div class="twin-legend-strip">
+          <div class="legend-group">
+            <span class="legend-item"><span class="legend-chip healthy"></span> HEALTHY (&ge;80%)</span>
+            <span class="legend-item"><span class="legend-chip warning"></span> WARNING (50-79%)</span>
+            <span class="legend-item"><span class="legend-chip critical"></span> CRITICAL (&lt;50%)</span>
+          </div>
+          <div>
+            <span>* CLICK ANY JOINT (J1-J5) OR COMPONENT TO DEEP-DIVE INSPECT</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Digital Twin Sub-assemblies & Selected Joint Inspector -->
+      <div class="twin-telemetry-side">
+        <!-- Sub-Assemblies Component Grid -->
+        <div class="scada-panel">
+          <div class="panel-header">
+            <div class="panel-title">
+              <span class="panel-title-icon">⚙</span>
+              <h2>SUB-ASSEMBLIES HEALTH</h2>
+            </div>
+            <span class="panel-meta" id="components-summary-meta">6 UNITS MONITORED</span>
+          </div>
+          <div class="panel-body" style="padding:12px;">
+            <div class="components-grid" id="components-container">
+              <!-- Dynamically populated via renderComponents() -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Selected Joint Live Telemetry Inspector -->
+        <div class="inspector-card" id="joint-inspector-card">
+          <div class="panel-title" style="margin-bottom:6px;">
+            <span class="panel-title-icon">🔍</span>
+            <h2 id="inspector-joint-title" style="font-size:13px;">JOINT J1 TELEMETRY</h2>
+          </div>
+          <div class="inspector-data-row">
+            <span>CHAINAGE LOCATION</span>
+            <span id="insp-position">10.0 METERS</span>
+          </div>
+          <div class="inspector-data-row">
+            <span>SPLICE HEALTH INDEX</span>
+            <span id="insp-health" style="color:var(--emerald-safe);">94.2%</span>
+          </div>
+          <div class="inspector-data-row">
+            <span>DETECTED ANOMALY</span>
+            <span id="insp-damage">NORMAL</span>
+          </div>
+          <div class="inspector-data-row">
+            <span>RUPTURE RISK FACTOR</span>
+            <span id="insp-risk">5.8%</span>
+          </div>
+          <div class="inspector-data-row">
+            <span>TELEMETRY SOURCE</span>
+            <span id="insp-source">SIMULATED SENSOR</span>
+          </div>
+          <div style="margin-top:8px; display:flex; gap:8px;">
+            <button class="scada-btn primary" style="flex:1; justify-content:center;" id="btn-insp-test-vision">
+              TEST VISION DETECTION
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== 6. REAL-TIME SCADA OSCILLOSCOPE TRENDS ==================== -->
+    <section class="charts-triplet">
+      <!-- Chart 1: Thermal & Current Dynamics -->
+      <div class="chart-card">
+        <div class="chart-card-head">
+          <div class="chart-title-box">
+            <span style="color:var(--amber-warn);">●</span>
+            <span class="chart-title">THERMAL &amp; CURRENT DYNAMICS</span>
+          </div>
+          <div class="chart-live-val" id="head-val-temp-current">--°C / --A</div>
+        </div>
+        <div class="chart-body-canvas">
+          <canvas id="chart-temp-current"></canvas>
+        </div>
+      </div>
+
+      <!-- Chart 2: Structural Vibration & Dynamic Loading -->
+      <div class="chart-card">
+        <div class="chart-card-head">
+          <div class="chart-title-box">
+            <span style="color:var(--crimson-crit);">●</span>
+            <span class="chart-title">VIBRATION &amp; PAYLOAD MOMENTUM</span>
+          </div>
+          <div class="chart-live-val" id="head-val-vib-load">--m/s² / --kg</div>
+        </div>
+        <div class="chart-body-canvas">
+          <canvas id="chart-vib-load"></canvas>
+        </div>
+      </div>
+
+      <!-- Chart 3: System Integrity & Risk Trajectory -->
+      <div class="chart-card">
+        <div class="chart-card-head">
+          <div class="chart-title-box">
+            <span style="color:var(--cyan-neon);">●</span>
+            <span class="chart-title">INTEGRITY VS RUPTURE RISK</span>
+          </div>
+          <div class="chart-live-val" id="head-val-health-risk">--% / --%</div>
+        </div>
+        <div class="chart-body-canvas">
+          <canvas id="chart-health-risk"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== 7. BELT JOINT MONITORING & RUPTURE RISK TABLE ==================== -->
+    <section class="scada-panel">
+      <div class="panel-header">
+        <div class="panel-title">
+          <span class="panel-title-icon">📊</span>
+          <h2>BELT JOINT RUPTURE INTELLIGENCE // 5 VULCANIZED SPLICE STATIONS</h2>
+        </div>
+        <div class="panel-meta" id="joints-summary-stats">5 JOINTS: 5 HEALTHY · 0 WARNING · 0 CRITICAL</div>
+      </div>
+      <div class="panel-body joint-matrix-panel" style="padding:0;">
+        <table class="scada-table">
+          <thead>
+            <tr>
+              <th>SPLICE ID</th>
+              <th>CHAINAGE POSITION</th>
+              <th>HEALTH INDEX</th>
+              <th>DETECTED DEFECT</th>
+              <th>RUPTURE RISK</th>
+              <th>INSPECTION SOURCE</th>
+              <th>OPERATIONAL STATUS</th>
+              <th>ACTIONS</th>
+            </tr>
+          </thead>
+          <tbody id="joint-table-body">
+            <!-- Dynamically populated via renderJointsTable() -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ==================== 8. ALARMS & PRESCRIPTIVE MAINTENANCE ==================== -->
+    <section class="alarms-pm-section">
+      <!-- ISA-18.2 Style Alarm Annunciator & Events -->
+      <div class="scada-panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <span class="panel-title-icon">⚠</span>
+            <h2>SCADA ALARM ANNUNCIATOR &amp; EVENT AUDIT</h2>
+          </div>
+          <button class="scada-btn" style="padding:2px 8px; font-size:11px;" id="btn-ack-alarms">
+            ACKNOWLEDGE ALL
+          </button>
+        </div>
+        <div class="panel-body">
+          <!-- Rapid Visual Annunciator Tiles -->
+          <div class="alarm-annunciator-grid">
+            <div class="annunciator-tile" id="tile-vib-alarm">
+              <span class="status-dot"></span> HIGH VIBRATION
+            </div>
+            <div class="annunciator-tile" id="tile-temp-alarm">
+              <span class="status-dot"></span> THERMAL OVERRUN
+            </div>
+            <div class="annunciator-tile" id="tile-curr-alarm">
+              <span class="status-dot"></span> CURRENT OVERLOAD
+            </div>
+            <div class="annunciator-tile" id="tile-joint-alarm">
+              <span class="status-dot"></span> JOINT DAMAGE
+            </div>
+            <div class="annunciator-tile" id="tile-risk-alarm">
+              <span class="status-dot"></span> HIGH ML RISK
+            </div>
+            <div class="annunciator-tile" id="tile-slip-alarm">
+              <span class="status-dot"></span> BELT SLIPPAGE
+            </div>
+          </div>
+
+          <!-- Chronological Event Stream -->
+          <ul class="alarm-history-list" id="alarm-history-list">
+            <!-- Dynamically populated -->
+          </ul>
+        </div>
+      </div>
+
+      <!-- Prescriptive Action & Root Cause Engine -->
+      <div class="scada-panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <span class="panel-title-icon">🧠</span>
+            <h2>PRESCRIPTIVE MAINTENANCE &amp; XAI ROOT CAUSE</h2>
+          </div>
+          <span class="panel-meta">RULE-BASED INFERENCE</span>
+        </div>
+        <div class="panel-body" style="display:flex; flex-direction:column; gap:14px;">
+          <div class="pm-action-card">
+            <div class="pm-action-header">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+              </svg>
+              RECOMMENDED MAINTENANCE ACTION
+            </div>
+            <div class="pm-action-text" id="pm-recommended-action">
+              CONTINUE CONTINUOUS CONDITION MONITORING.
+            </div>
+          </div>
+
+          <div>
+            <span class="kpi-tag" style="display:block; margin-bottom:4px;">CONTRIBUTING ANOMALOUS SIGNALS</span>
+            <div class="signals-tag-list" id="signals-tag-list">
+              <span class="signal-chip">All monitored signals within normal range</span>
+            </div>
+          </div>
+
+          <div>
+            <span class="kpi-tag" style="display:block; margin-bottom:4px;">PRIMARY FAILURE INDICATION</span>
+            <div style="font-family:var(--font-telemetry); font-size:14px; color:var(--text-pure);" id="explanation-indication">
+              No significant abnormality detected
+            </div>
+            <p style="font-size:11px; color:var(--text-dim); margin-top:6px;" id="pm-risk-method">
+              Method: Threshold-based rule explanation &amp; 1 - model_confidence prototype metric.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== 9. FOOTER DISCLAIMER & INFO ==================== -->
+    <footer class="scada-footer">
+      <div>
+        <strong>K'STARKOM DIGITAL TWIN SUITE</strong> — SIH 2026 Iron Ore Mining Logistics &amp; Conveyor Predictive Maintenance.
+      </div>
+      <div class="footer-compliance">
+        <span>ESTIMATION PROTOTYPE</span>
+        <span>•</span>
+        <span id="footer-update-time">LAST TELEMETRY: INITIALIZING...</span>
+      </div>
+    </footer>
+
+  </main>
+
+  <!-- ==================== 10. MODAL: WHAT-IF ML INFERENCE LAB ==================== -->
+  <div class="scada-modal-backdrop" id="modal-whatif">
+    <div class="scada-modal">
+      <div class="modal-header">
+        <h3>WHAT-IF MACHINE LEARNING LAB // MANUAL PREDICTION</h3>
+        <button class="modal-close-btn" onclick="closeModal('modal-whatif')">&times;</button>
+      </div>
+      <div class="modal-content">
+        <p style="font-size:12px; color:var(--text-muted);">
+          Simulate hypothetical sensor readings through the real trained <strong>XGBoost 20-feature pipeline</strong> (via <code>POST /api/predict</code>) and observe the 6-class softmax probability distribution in real time.
+        </p>
+
+        <!-- Quick Scenario Presets -->
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <span style="font-size:11px; color:var(--text-dim); align-self:center;">PRESETS:</span>
+          <button class="scada-btn" style="padding:4px 8px; font-size:11px;" onclick="loadWhatifPreset('normal')">Normal Baseline</button>
+          <button class="scada-btn" style="padding:4px 8px; font-size:11px;" onclick="loadWhatifPreset('vibration')">High Vibration</button>
+          <button class="scada-btn" style="padding:4px 8px; font-size:11px;" onclick="loadWhatifPreset('overload')">Heavy Overload</button>
+          <button class="scada-btn" style="padding:4px 8px; font-size:11px;" onclick="loadWhatifPreset('thermal')">Motor Thermal Spike</button>
+        </div>
+
+        <!-- 5 Sliders -->
+        <div class="slider-control-group">
+          <div class="slider-label-row">
+            <span>BELT SPEED</span>
+            <span id="lbl-whatif-speed">120.8 RPM</span>
+          </div>
+          <input type="range" class="scada-range-input" id="rng-whatif-speed" min="80" max="160" step="0.5" value="120.8">
+        </div>
+
+        <div class="slider-control-group">
+          <div class="slider-label-row">
+            <span>ORE PAYLOAD</span>
+            <span id="lbl-whatif-load">506.7 KG</span>
+          </div>
+          <input type="range" class="scada-range-input" id="rng-whatif-load" min="300" max="800" step="1.0" value="506.7">
+        </div>
+
+        <div class="slider-control-group">
+          <div class="slider-label-row">
+            <span>TEMPERATURE</span>
+            <span id="lbl-whatif-temp">41.6 °C</span>
+          </div>
+          <input type="range" class="scada-range-input" id="rng-whatif-temp" min="20" max="90" step="0.5" value="41.6">
+        </div>
+
+        <div class="slider-control-group">
+          <div class="slider-label-row">
+            <span>VIBRATION ACCELERATION</span>
+            <span id="lbl-whatif-vib">0.86 m/s²</span>
+          </div>
+          <input type="range" class="scada-range-input" id="rng-whatif-vib" min="0.1" max="5.0" step="0.05" value="0.86">
+        </div>
+
+        <div class="slider-control-group">
+          <div class="slider-label-row">
+            <span>MOTOR CURRENT</span>
+            <span id="lbl-whatif-current">3.43 A</span>
+          </div>
+          <input type="range" class="scada-range-input" id="rng-whatif-current" min="1.0" max="18.0" step="0.1" value="3.43">
+        </div>
+
+        <button class="scada-btn primary" style="justify-content:center; padding:10px;" id="btn-run-whatif">
+          RUN XGBOOST INFERENCE PIPELINE
+        </button>
+
+        <!-- Prediction Output Display -->
+        <div id="whatif-result-card" style="display:none; background:var(--bg-surface); border:1px solid var(--border-bright); border-radius:var(--radius-md); padding:14px;">
+          <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px;">
+            <div>
+              <span class="kpi-tag">PREDICTED FAULT</span>
+              <h4 style="font-family:var(--font-scada); color:var(--text-pure); font-size:18px;" id="whatif-fault-name">--</h4>
+            </div>
+            <div style="text-align:right;">
+              <span class="kpi-tag">RISK SCORE</span>
+              <div style="font-family:var(--font-telemetry); font-size:18px; color:var(--amber-warn);" id="whatif-risk-val">--%</div>
+            </div>
+          </div>
+
+          <span class="kpi-tag" style="display:block; margin-bottom:6px;">6-CLASS SOFTMAX PROBABILITY BREAKDOWN:</span>
+          <ul class="proba-breakdown-list" id="whatif-proba-list">
+            <!-- Dynamically populated -->
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 11. MODAL: AI VISION DAMAGE SIMULATOR ==================== -->
+  <div class="scada-modal-backdrop" id="modal-vision">
+    <div class="scada-modal">
+      <div class="modal-header">
+        <h3>AI VISION JOINT DAMAGE DETECTOR // INTEGRATION SIMULATOR</h3>
+        <button class="modal-close-btn" onclick="closeModal('modal-vision')">&times;</button>
+      </div>
+      <div class="modal-content">
+        <p style="font-size:12px; color:var(--text-muted);">
+          Simulate a computer vision pipeline (e.g. high-speed camera + YOLO model) pushing joint splice inspection results directly into the Digital Twin via <code>POST /api/vision/joint</code>.
+        </p>
+
+        <div style="display:flex; flex-direction:column; gap:6px;">
+          <label class="toolbar-label">SELECT TARGET BELT JOINT:</label>
+          <select id="sel-vision-joint" class="scada-range-input" style="height:36px; padding:6px 12px; color:var(--text-pure); background:var(--bg-surface);">
+            <option value="J1">Joint J1 (Position 10.0m)</option>
+            <option value="J2">Joint J2 (Position 25.0m)</option>
+            <option value="J3">Joint J3 (Position 40.0m)</option>
+            <option value="J4">Joint J4 (Position 55.0m)</option>
+            <option value="J5">Joint J5 (Position 70.0m)</option>
+          </select>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:6px;">
+          <label class="toolbar-label">DETECTED SPLICE DEFECT TYPE:</label>
+          <select id="sel-vision-damage" class="scada-range-input" style="height:36px; padding:6px 12px; color:var(--text-pure); background:var(--bg-surface);">
+            <option value="Normal">Normal (No Defect)</option>
+            <option value="Scratch">Surface Scratch (Minor)</option>
+            <option value="Tear">Longitudinal Tear (Severe)</option>
+            <option value="Splice Fatigue">Splice Delamination / Fatigue</option>
+            <option value="Edge Fray">Edge Fraying &amp; Carcass Exposure</option>
+          </select>
+        </div>
+
+        <div class="slider-control-group">
+          <div class="slider-label-row">
+            <span>DEFECT SEVERITY INDEX</span>
+            <span id="lbl-vision-severity">0.75 (75%)</span>
+          </div>
+          <input type="range" class="scada-range-input" id="rng-vision-severity" min="0.0" max="1.0" step="0.05" value="0.75">
+        </div>
+
+        <button class="scada-btn primary" style="justify-content:center; padding:10px;" id="btn-push-vision">
+          TRANSMIT VISION TELEMETRY TO DIGITAL TWIN
+        </button>
+
+        <div id="vision-feedback-card" style="display:none; background:var(--bg-surface); border:1px solid var(--emerald-safe); border-radius:var(--radius-md); padding:12px; font-family:var(--font-telemetry); font-size:12px; color:var(--emerald-safe);">
+          ✓ Joint telemetry successfully updated in Digital Twin.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 12. MODAL: MODEL ARCHITECTURE DOSSIER ==================== -->
+  <div class="scada-modal-backdrop" id="modal-model">
+    <div class="scada-modal">
+      <div class="modal-header">
+        <h3>MODEL ARCHITECTURE &amp; PIPELINE DOSSIER</h3>
+        <button class="modal-close-btn" onclick="closeModal('modal-model')">&times;</button>
+      </div>
+      <div class="modal-content">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+          <div class="component-card">
+            <span class="kpi-tag">MODEL TYPE</span>
+            <span class="component-name" id="dossier-model-type">XGBoost Classifier</span>
+          </div>
+          <div class="component-card">
+            <span class="kpi-tag">TEST ACCURACY</span>
+            <span class="component-name" id="dossier-accuracy" style="color:var(--emerald-safe);">98.77%</span>
+          </div>
+          <div class="component-card">
+            <span class="kpi-tag">TRAINING SAMPLES</span>
+            <span class="component-name" id="dossier-train-samples">967 samples</span>
+          </div>
+          <div class="component-card">
+            <span class="kpi-tag">TEST SAMPLES</span>
+            <span class="component-name" id="dossier-test-samples">242 samples</span>
+          </div>
+          <div class="component-card">
+            <span class="kpi-tag">FEATURE SHAPE</span>
+            <span class="component-name" id="dossier-features">20 Features (5 Raw + 15 Rolling)</span>
+          </div>
+          <div class="component-card">
+            <span class="kpi-tag">SCALING ENGINE</span>
+            <span class="component-name">StandardScaler (Mean/Std Fit)</span>
+          </div>
+        </div>
+
+        <div>
+          <span class="kpi-tag" style="display:block; margin-bottom:6px;">6 VERIFIED FAULT CLASSES:</span>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; font-family:var(--font-telemetry); font-size:11.5px;">
+            <div style="background:var(--bg-surface); padding:6px 10px; border-radius:4px; border:1px solid var(--border-subtle);">0: Ball Bearing Fault</div>
+            <div style="background:var(--bg-surface); padding:6px 10px; border-radius:4px; border:1px solid var(--border-subtle);">1: Belt Slippage</div>
+            <div style="background:var(--bg-surface); padding:6px 10px; border-radius:4px; border:1px solid var(--border-subtle);">2: Central Shaft Fault</div>
+            <div style="background:var(--bg-surface); padding:6px 10px; border-radius:4px; border:1px solid var(--border-subtle);">3: Drive Motor Fault</div>
+            <div style="background:var(--bg-surface); padding:6px 10px; border-radius:4px; border:1px solid var(--border-subtle);">4: Idler Roller Fault</div>
+            <div style="background:var(--bg-surface); padding:6px 10px; border-radius:4px; border:1px solid var(--border-subtle);">5: Pulley Fault</div>
+          </div>
+        </div>
+
+        <div style="background:rgba(255,183,3,0.06); border-left:3px solid var(--amber-warn); padding:10px 12px; border-radius:4px; font-size:11.5px; color:var(--text-muted);">
+          <strong>Note on Prototype Risk Metric:</strong> The trained model does not contain an explicitly labelled "Normal" class. Failure risk is computed as <code>1 - model_confidence</code> to ensure complete transparent explainability.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCADA Client Core Logic -->
+  <script src="/static/app.js"></script>
+</body>
+</html>
